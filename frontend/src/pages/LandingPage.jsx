@@ -73,6 +73,48 @@ const LandingPage = ({ setUser }) => {
     }
   };
 
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    
+    if (signupData.password !== signupData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (signupData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await axiosInstance.post('/auth/signup', {
+        collegeName: signupData.collegeName,
+        email: signupData.email,
+        password: signupData.password,
+        name: signupData.name,
+      });
+
+      toast.success('Signup successful! Please login with your credentials.');
+      
+      // Switch to login mode and pre-fill email
+      setAuthMode('login');
+      setFormData({
+        ...formData,
+        email: signupData.email,
+        collegeId: response.data.collegeId,
+      });
+      
+      // Refresh colleges list
+      await fetchColleges();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const features = [
     { icon: Building2, title: 'Smart Infrastructure', desc: 'Manage blocks, rooms, and seating capacity efficiently' },
     { icon: Users, title: 'Role-Based Access', desc: 'Separate portals for admins, invigilators, and students' },
