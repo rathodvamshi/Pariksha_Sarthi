@@ -182,35 +182,35 @@ const CreateExam = ({ user }) => {
   };
 
   return (
-    <div data-testid=\"create-exam\" className=\"space-y-6\">
-      <div className=\"flex justify-between items-center\">
-        <h2 className=\"text-3xl font-bold text-gray-900\">Manage Exams</h2>
+    <div  data-testid="create-exam\"  className="space-y-6>
+      <div  className="flex justify-between items-center>
+        <h2  className="text-3xl font-bold text-gray-900>Manage Exams</h2>
         <Button
-          data-testid=\"create-exam-btn\"
+           data-testid="create-exam-btn\"
           onClick={() => setShowModal(true)}
-          className=\"bg-blue-600 hover:bg-blue-700 rounded-full\"
+           className="bg-blue-600 hover:bg-blue-700 rounded-full\"
         >
-          <Plus className=\"h-4 w-4 mr-2\" /> Create Exam
+          <Plus  className="h-4 w-4 mr-2\" /> Create Exam
         </Button>
       </div>
 
-      <Card className=\"backdrop-blur-sm bg-white/70\">
+      <Card  className="backdrop-blur-sm bg-white/70>
         <CardHeader>
           <CardTitle>Existing Exams</CardTitle>
         </CardHeader>
         <CardContent>
           {exams.length === 0 ? (
-            <p className=\"text-center text-gray-500 py-8\">No exams created yet</p>
+            <p  className="text-center text-gray-500 py-8>No exams created yet</p>
           ) : (
-            <div className=\"space-y-4\">
+            <div  className="space-y-4>
               {exams.map((exam) => (
                 <div
                   key={exam.id}
                   data-testid={`exam-${exam.id}`}
-                  className=\"p-4 border border-blue-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50\"
+                   className="p-4 border border-blue-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50\"
                 >
-                  <h3 className=\"text-lg font-semibold text-gray-900 mb-2\">{exam.title}</h3>
-                  <div className=\"text-sm text-gray-600 space-y-1\">
+                  <h3  className="text-lg font-semibold text-gray-900 mb-2>{exam.title}</h3>
+                  <div  className="text-sm text-gray-600 space-y-1>
                     <p>Date: {exam.date} | Time: {exam.startTime} - {exam.endTime}</p>
                     <p>Subjects: {exam.subjects?.join(', ')}</p>
                     <p>Years: {exam.years?.join(', ')} | Branches: {exam.branches?.join(', ')}</p>
@@ -223,19 +223,19 @@ const CreateExam = ({ user }) => {
       </Card>
 
       <Dialog open={showModal} onOpenChange={(open) => { if (!open) resetForm(); setShowModal(open); }}>
-        <DialogContent className=\"max-w-4xl max-h-[90vh] overflow-y-auto\">
+        <DialogContent  className="max-w-4xl max-h-[90vh] overflow-y-auto>
           <DialogHeader>
             <DialogTitle>Create Exam Arrangement - Step {currentStep} of 3</DialogTitle>
           </DialogHeader>
 
           {currentStep === 1 && (
-            <div className=\"space-y-4\">
-              <h3 className=\"text-lg font-semibold\">Exam Details</h3>
-              <div className=\"grid md:grid-cols-2 gap-4\">
+            <div  className="space-y-4>
+              <h3  className="text-lg font-semibold>Exam Details</h3>
+              <div  className="grid md:grid-cols-2 gap-4>
                 <div>
-                  <Label htmlFor=\"title\">Exam Title</Label>
+                  <Label htmlFor=\"title>Exam Title</Label>
                   <Input
-                    data-testid=\"exam-title-input\"
+                     data-testid="exam-title-input\"
                     id=\"title\"
                     value={examData.title}
                     onChange={(e) => setExamData({ ...examData, title: e.target.value })}
@@ -244,9 +244,9 @@ const CreateExam = ({ user }) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor=\"date\">Date</Label>
+                  <Label htmlFor=\"date>Date</Label>
                   <Input
-                    data-testid=\"exam-date-input\"
+                     data-testid="exam-date-input\"
                     id=\"date\"
                     type=\"date\"
                     value={examData.date}
@@ -255,9 +255,9 @@ const CreateExam = ({ user }) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor=\"startTime\">Start Time</Label>
+                  <Label htmlFor=\"startTime>Start Time</Label>
                   <Input
-                    data-testid=\"exam-start-time-input\"
+                     data-testid="exam-start-time-input\"
                     id=\"startTime\"
                     type=\"time\"
                     value={examData.startTime}
@@ -266,9 +266,9 @@ const CreateExam = ({ user }) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor=\"endTime\">End Time</Label>
+                  <Label htmlFor=\"endTime>End Time</Label>
                   <Input
-                    data-testid=\"exam-end-time-input\"
+                     data-testid="exam-end-time-input\"
                     id=\"endTime\"
                     type=\"time\"
                     value={examData.endTime}
@@ -278,9 +278,9 @@ const CreateExam = ({ user }) => {
                 </div>
               </div>
               <div>
-                <Label htmlFor=\"subjects\">Subjects (comma-separated)</Label>
+                <Label htmlFor=\"subjects>Subjects (comma-separated)</Label>
                 <Input
-                  data-testid=\"exam-subjects-input\"
+                   data-testid="exam-subjects-input\"
                   id=\"subjects\"
                   value={examData.subjects}
                   onChange={(e) => setExamData({ ...examData, subjects: e.target.value })}
@@ -290,7 +290,7 @@ const CreateExam = ({ user }) => {
               </div>
               <div>
                 <Label>Select Years</Label>
-                <div className=\"flex flex-wrap gap-2 mt-2\">
+                <div  className="flex flex-wrap gap-2 mt-2>
                   {years.map((year) => (
                     <button
                       key={year}
@@ -308,7 +308,7 @@ const CreateExam = ({ user }) => {
               </div>
               <div>
                 <Label>Select Branches</Label>
-                <div className=\"flex flex-wrap gap-2 mt-2\">
+                <div  className="flex flex-wrap gap-2 mt-2>
                   {branches.map((branch) => (
                     <button
                       key={branch}
@@ -325,10 +325,10 @@ const CreateExam = ({ user }) => {
                 </div>
               </div>
               <Button
-                data-testid=\"exam-step1-next-btn\"
+                 data-testid="exam-step1-next-btn\"
                 onClick={handleCreateExam}
                 disabled={!examData.title || !examData.date || examData.years.length === 0 || examData.branches.length === 0}
-                className=\"w-full bg-blue-600 hover:bg-blue-700\"
+                 className="w-full bg-blue-600 hover:bg-blue-700\"
               >
                 Next: Select Rooms
               </Button>
@@ -336,25 +336,25 @@ const CreateExam = ({ user }) => {
           )}
 
           {currentStep === 2 && (
-            <div className=\"space-y-4\">
-              <h3 className=\"text-lg font-semibold\">Select Rooms & Allocation Settings</h3>
-              <div className=\"p-4 bg-blue-50 rounded-lg\">
-                <p className=\"text-sm font-medium\">Selected Capacity: {getSelectedCapacity()} seats</p>
+            <div  className="space-y-4>
+              <h3  className="text-lg font-semibold>Select Rooms & Allocation Settings</h3>
+              <div  className="p-4 bg-blue-50 rounded-lg>
+                <p  className="text-sm font-medium>Selected Capacity: {getSelectedCapacity()} seats</p>
               </div>
               <div>
                 <Label>Students per Bench</Label>
                 <RadioGroup
                   value={String(examData.studentsPerBench)}
                   onValueChange={(v) => setExamData({ ...examData, studentsPerBench: parseInt(v) })}
-                  className=\"flex space-x-4 mt-2\"
+                   className="flex space-x-4 mt-2\"
                 >
-                  <div className=\"flex items-center space-x-2\">
-                    <RadioGroupItem data-testid=\"students-per-bench-1\" value=\"1\" id=\"r1\" />
-                    <Label htmlFor=\"r1\">1 Student per Bench</Label>
+                  <div  className="flex items-center space-x-2>
+                    <RadioGroupItem  data-testid="students-per-bench-1\" value=\"1\" id=\"r1\" />
+                    <Label htmlFor=\"r1>1 Student per Bench</Label>
                   </div>
-                  <div className=\"flex items-center space-x-2\">
-                    <RadioGroupItem data-testid=\"students-per-bench-2\" value=\"2\" id=\"r2\" />
-                    <Label htmlFor=\"r2\">2 Students per Bench</Label>
+                  <div  className="flex items-center space-x-2>
+                    <RadioGroupItem  data-testid="students-per-bench-2\" value=\"2\" id=\"r2\" />
+                    <Label htmlFor=\"r2>2 Students per Bench</Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -363,25 +363,25 @@ const CreateExam = ({ user }) => {
                 <RadioGroup
                   value={examData.allocationType}
                   onValueChange={(v) => setExamData({ ...examData, allocationType: v })}
-                  className=\"flex space-x-4 mt-2\"
+                   className="flex space-x-4 mt-2\"
                 >
-                  <div className=\"flex items-center space-x-2\">
-                    <RadioGroupItem data-testid=\"allocation-random\" value=\"random\" id=\"random\" />
-                    <Label htmlFor=\"random\">Random</Label>
+                  <div  className="flex items-center space-x-2>
+                    <RadioGroupItem  data-testid="allocation-random\" value=\"random\" id=\"random\" />
+                    <Label htmlFor=\"random>Random</Label>
                   </div>
-                  <div className=\"flex items-center space-x-2\">
-                    <RadioGroupItem data-testid=\"allocation-jumbled\" value=\"jumbled\" id=\"jumbled\" />
-                    <Label htmlFor=\"jumbled\">Jumbled (Mix branches)</Label>
+                  <div  className="flex items-center space-x-2>
+                    <RadioGroupItem  data-testid="allocation-jumbled\" value=\"jumbled\" id=\"jumbled\" />
+                    <Label htmlFor=\"jumbled>Jumbled (Mix branches)</Label>
                   </div>
                 </RadioGroup>
               </div>
               <div>
                 <Label>Select Rooms</Label>
-                <div className=\"space-y-3 mt-2 max-h-64 overflow-y-auto\">
+                <div  className="space-y-3 mt-2 max-h-64 overflow-y-auto>
                   {blocks.map((block) => (
                     <div key={block.id}>
-                      <p className=\"font-semibold text-sm text-gray-700 mb-2\">{block.name}</p>
-                      <div className=\"grid md:grid-cols-3 gap-2 ml-4\">
+                      <p  className="font-semibold text-sm text-gray-700 mb-2>{block.name}</p>
+                      <div  className="grid md:grid-cols-3 gap-2 ml-4>
                         {allRooms
                           .filter((r) => r.blockId === block.id)
                           .map((room) => (
@@ -396,8 +396,8 @@ const CreateExam = ({ user }) => {
                                   : 'border-gray-200 hover:bg-gray-50'
                               }`}
                             >
-                              <div className=\"font-medium\">{room.roomNumber}</div>
-                              <div className=\"text-xs text-gray-600\">{room.benches} benches</div>
+                              <div  className="font-medium>{room.roomNumber}</div>
+                              <div  className="text-xs text-gray-600>{room.benches} benches</div>
                             </button>
                           ))}
                       </div>
@@ -405,15 +405,15 @@ const CreateExam = ({ user }) => {
                   ))}
                 </div>
               </div>
-              <div className=\"flex space-x-2\">
-                <Button onClick={() => setCurrentStep(1)} variant=\"outline\" className=\"flex-1\">
+              <div  className="flex space-x-2>
+                <Button onClick={() => setCurrentStep(1)} variant=\"outline\"  className="flex-1>
                   Back
                 </Button>
                 <Button
-                  data-testid=\"allocate-seats-btn\"
+                   data-testid="allocate-seats-btn\"
                   onClick={handleAllocateSeats}
                   disabled={loading || selectedRooms.length === 0}
-                  className=\"flex-1 bg-green-600 hover:bg-green-700\"
+                   className="flex-1 bg-green-600 hover:bg-green-700\"
                 >
                   {loading ? 'Allocating...' : 'Allocate Seats'}
                 </Button>
@@ -422,25 +422,25 @@ const CreateExam = ({ user }) => {
           )}
 
           {currentStep === 3 && (
-            <div className=\"space-y-4\">
-              <h3 className=\"text-lg font-semibold\">Review & Assign Invigilators</h3>
-              <div className=\"p-4 bg-green-50 rounded-lg flex items-center\">
-                <CheckCircle className=\"h-5 w-5 text-green-600 mr-2\" />
-                <span className=\"font-medium\">{allocations.length} students allocated successfully!</span>
+            <div  className="space-y-4>
+              <h3  className="text-lg font-semibold>Review & Assign Invigilators</h3>
+              <div  className="p-4 bg-green-50 rounded-lg flex items-center>
+                <CheckCircle  className="h-5 w-5 text-green-600 mr-2\" />
+                <span  className="font-medium>{allocations.length} students allocated successfully!</span>
               </div>
-              <div className=\"space-y-4 max-h-96 overflow-y-auto\">
+              <div  className="space-y-4 max-h-96 overflow-y-auto>
                 {Object.entries(groupAllocationsByRoom()).map(([roomId, data]) => (
-                  <div key={roomId} data-testid={`room-allocation-${roomId}`} className=\"p-4 border rounded-lg bg-blue-50\">
-                    <div className=\"flex justify-between items-start mb-3\">
+                  <div key={roomId} data-testid={`room-allocation-${roomId}`}  className="p-4 border rounded-lg bg-blue-50>
+                    <div  className="flex justify-between items-start mb-3>
                       <div>
-                        <h4 className=\"font-semibold\">{data.block?.name} - Room {data.room?.roomNumber}</h4>
-                        <p className=\"text-sm text-gray-600\">{data.students.length} students allocated</p>
+                        <h4  className="font-semibold>{data.block?.name} - Room {data.room?.roomNumber}</h4>
+                        <p  className="text-sm text-gray-600>{data.students.length} students allocated</p>
                       </div>
                       <Select
                         value={selectedInvigilators[roomId] || ''}
                         onValueChange={(value) => handleAssignInvigilator(roomId, value)}
                       >
-                        <SelectTrigger data-testid={`invigilator-select-${roomId}`} className=\"w-48\">
+                        <SelectTrigger data-testid={`invigilator-select-${roomId}`}  className="w-48>
                           <SelectValue placeholder=\"Assign invigilator\" />
                         </SelectTrigger>
                         <SelectContent>
@@ -456,9 +456,9 @@ const CreateExam = ({ user }) => {
                 ))}
               </div>
               <Button
-                data-testid=\"finalize-exam-btn\"
+                 data-testid="finalize-exam-btn\"
                 onClick={handleFinalize}
-                className=\"w-full bg-blue-600 hover:bg-blue-700\"
+                 className="w-full bg-blue-600 hover:bg-blue-700\"
               >
                 Finalize & Send Notifications
               </Button>
