@@ -171,6 +171,58 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 # ============ AUTH ROUTES ============
 
+class SignupRequest(BaseModel):
+    collegeName: str
+    email: EmailStr
+    password: str
+    name: str
+
+@api_router.post("/auth/signup")
+async def signup(request: SignupRequest):
+    # Check if email already exists
+    existing_user = await db.users.find_one({"email": request.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create new college
+    college_id = str(uuid.uuid4())
+    college = {
+        "id": college_id,
+        "name": request.collegeName,
+        "address": ""
+    }
+    
+    # Check if college with same name exists
+    existing_college = await db.colleges.find_one({"name": request.collegeName})
+    if existing_college:
+        college_id = existing_college["id"]
+    else:
+        await db.colleges.insert_one(college)
+    
+    # Create admin user
+    user_id = str(uuid.uuid4())
+    hashed_password = hash_password(request.password)
+    
+    admin_user = {
+        "id": user_id,
+        "collegeId": college_id,
+        "email": request.email,
+        "password": hashed_password,
+        "role": "admin",
+        "profile": {
+            "name": request.name,
+            "employeeId": f"ADM{str(uuid.uuid4())[:6].upper()}"
+        }
+    }
+    
+    await db.users.insert_one(admin_user)
+    
+    return {
+        "message": "Signup successful! Please login with your credentials.",
+        "collegeId": college_id,
+        "email": request.email
+    }
+
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(request: LoginRequest):
     # Find user based on role
