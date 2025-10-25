@@ -208,7 +208,10 @@ const LandingPage = ({ setUser }) => {
             <div className="grid grid-cols-3 gap-4 py-4">
               <button
                 data-testid="select-admin-role-btn"
-                onClick={() => setSelectedRole('admin')}
+                onClick={() => {
+                  setSelectedRole('admin');
+                  setAuthMode('login');
+                }}
                 className="flex flex-col items-center p-6 border-2 border-blue-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all"
               >
                 <Users className="h-10 w-10 text-blue-600 mb-2" />
@@ -230,6 +233,188 @@ const LandingPage = ({ setUser }) => {
                 <GraduationCap className="h-10 w-10 text-purple-600 mb-2" />
                 <span className="font-semibold text-gray-900">Student</span>
               </button>
+            </div>
+          ) : selectedRole === 'admin' ? (
+            <div>
+              <div className="flex border-b mb-4">
+                <button
+                  data-testid="login-tab"
+                  onClick={() => setAuthMode('login')}
+                  className={`flex-1 py-2 text-center font-medium transition-colors ${
+                    authMode === 'login'
+                      ? 'border-b-2 border-blue-600 text-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Login
+                </button>
+                <button
+                  data-testid="signup-tab"
+                  onClick={() => setAuthMode('signup')}
+                  className={`flex-1 py-2 text-center font-medium transition-colors ${
+                    authMode === 'signup'
+                      ? 'border-b-2 border-blue-600 text-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+
+              {authMode === 'login' ? (
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <Label htmlFor="college">Select College</Label>
+                    <Select
+                      value={formData.collegeId}
+                      onValueChange={(value) => setFormData({ ...formData, collegeId: value })}
+                    >
+                      <SelectTrigger data-testid="college-select">
+                        <SelectValue placeholder="Choose college" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {colleges.map((college) => (
+                          <SelectItem key={college.id} value={college.id}>
+                            {college.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      data-testid="email-input"
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      data-testid="password-input"
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Enter your password"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setSelectedRole(null)}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      data-testid="login-submit-btn"
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {loading ? 'Logging in...' : 'Login'}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div>
+                    <Label htmlFor="collegeName">College Name</Label>
+                    <Input
+                      data-testid="college-name-input"
+                      id="collegeName"
+                      type="text"
+                      value={signupData.collegeName}
+                      onChange={(e) => setSignupData({ ...signupData, collegeName: e.target.value })}
+                      placeholder="Enter college full name"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="name">Your Full Name</Label>
+                    <Input
+                      data-testid="admin-name-input"
+                      id="name"
+                      type="text"
+                      value={signupData.name}
+                      onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="signupEmail">Email</Label>
+                    <Input
+                      data-testid="signup-email-input"
+                      id="signupEmail"
+                      type="email"
+                      value={signupData.email}
+                      onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                      placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="signupPassword">Password</Label>
+                    <Input
+                      data-testid="signup-password-input"
+                      id="signupPassword"
+                      type="password"
+                      value={signupData.password}
+                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                      placeholder="Create a password (min 6 characters)"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      data-testid="confirm-password-input"
+                      id="confirmPassword"
+                      type="password"
+                      value={signupData.confirmPassword}
+                      onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                      placeholder="Re-enter your password"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setSelectedRole(null)}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      data-testid="signup-submit-btn"
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {loading ? 'Signing up...' : 'Sign Up'}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </div>
           ) : (
             <form onSubmit={handleLogin} className="space-y-4">
