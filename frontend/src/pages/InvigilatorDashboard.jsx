@@ -124,37 +124,37 @@ const InvigilatorDashboard = ({ user, setUser }) => {
         </div>
       </nav>
 
-      <div className=\"container mx-auto px-4 py-8\">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className=\"mb-8\">
-          <h2 className=\"text-3xl font-bold text-gray-900 mb-2\">Welcome, {user?.profile?.name}!</h2>
+      <div  className="container mx-auto px-4 py-8>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}  className="mb-8>
+          <h2  className="text-3xl font-bold text-gray-900 mb-2>Welcome, {user?.profile?.name}!</h2>
         </motion.div>
 
-        <div className=\"grid lg:grid-cols-3 gap-6 mb-8\">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className=\"lg:col-span-2\">
-            <Card data-testid=\"duties-card\" className=\"backdrop-blur-sm bg-white/70\">
+        <div  className="grid lg:grid-cols-3 gap-6 mb-8>
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}  className="lg:col-span-2>
+            <Card data-testid=\"duties-card\"  className="backdrop-blur-sm bg-white/70>
               <CardHeader>
-                <CardTitle className=\"flex items-center\">
-                  <ClipboardCheck className=\"h-5 w-5 mr-2 text-green-600\" />
+                <CardTitle  className="flex items-center>
+                  <ClipboardCheck  className="h-5 w-5 mr-2 text-green-600\" />
                   My Duties
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <div className=\"text-center py-8\">
-                    <div className=\"animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto\"></div>
+                  <div  className="text-center py-8>
+                    <div  className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto></div>
                   </div>
                 ) : duties.length === 0 ? (
-                  <p className=\"text-center text-gray-500 py-8\">No duties assigned</p>
+                  <p  className="text-center text-gray-500 py-8>No duties assigned</p>
                 ) : (
-                  <div className=\"space-y-4\">
+                  <div  className="space-y-4>
                     {duties.map((duty) => (
                       <div
                         key={duty.id}
                         data-testid={`duty-${duty.id}`}
-                        className=\"p-4 border border-green-200 rounded-xl bg-gradient-to-r from-green-50 to-teal-50\"
+                         className="p-4 border border-green-200 rounded-xl bg-gradient-to-r from-green-50 to-teal-50\"
                       >
-                        <div className=\"flex items-center justify-between mb-3\">
-                          <h3 className=\"text-lg font-semibold text-gray-900\">{duty.exam?.title}</h3>
+                        <div  className="flex items-center justify-between mb-3>
+                          <h3  className="text-lg font-semibold text-gray-900>{duty.exam?.title}</h3>
                           <Badge
                             className={
                               duty.status === 'accepted'
@@ -167,26 +167,26 @@ const InvigilatorDashboard = ({ user, setUser }) => {
                             {duty.status}
                           </Badge>
                         </div>
-                        <div className=\"space-y-2 text-sm text-gray-600 mb-4\">
-                          <div className=\"flex items-center\">
-                            <Calendar className=\"h-4 w-4 mr-2\" />
+                        <div  className="space-y-2 text-sm text-gray-600 mb-4>
+                          <div  className="flex items-center>
+                            <Calendar  className="h-4 w-4 mr-2\" />
                             {duty.exam?.date} | {duty.exam?.startTime} - {duty.exam?.endTime}
                           </div>
-                          <div className=\"flex items-center\">
-                            <MapPin className=\"h-4 w-4 mr-2\" />
+                          <div  className="flex items-center>
+                            <MapPin  className="h-4 w-4 mr-2\" />
                             Block: {duty.block?.name} | Room: {duty.room?.roomNumber}
                           </div>
                         </div>
-                        <div className=\"flex space-x-2\">
+                        <div  className="flex space-x-2>
                           {duty.status === 'pending' && (
                             <>
                               <Button
                                 data-testid={`accept-duty-${duty.id}`}
                                 onClick={() => handleAcceptDuty(duty.id)}
                                 size=\"sm\"
-                                className=\"bg-green-600 hover:bg-green-700\"
+                                 className="bg-green-600 hover:bg-green-700\"
                               >
-                                <CheckCircle className=\"h-4 w-4 mr-1\" /> Accept
+                                <CheckCircle  className="h-4 w-4 mr-1\" /> Accept
                               </Button>
                               <Button
                                 data-testid={`decline-duty-${duty.id}`}
@@ -197,7 +197,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
                                 size=\"sm\"
                                 variant=\"destructive\"
                               >
-                                <XCircle className=\"h-4 w-4 mr-1\" /> Decline
+                                <XCircle  className="h-4 w-4 mr-1\" /> Decline
                               </Button>
                             </>
                           )}
@@ -206,7 +206,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
                               data-testid={`view-duty-${duty.id}`}
                               onClick={() => handleViewDuty(duty)}
                               size=\"sm\"
-                              className=\"bg-blue-600 hover:bg-blue-700\"
+                               className="bg-blue-600 hover:bg-blue-700\"
                             >
                               View Details
                             </Button>
@@ -221,27 +221,27 @@ const InvigilatorDashboard = ({ user, setUser }) => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-            <Card data-testid=\"invigilator-notifications-card\" className=\"backdrop-blur-sm bg-white/70\">
+            <Card data-testid=\"invigilator-notifications-card\"  className="backdrop-blur-sm bg-white/70>
               <CardHeader>
-                <CardTitle className=\"flex items-center\">
-                  <Bell className=\"h-5 w-5 mr-2 text-blue-600\" />
+                <CardTitle  className="flex items-center>
+                  <Bell  className="h-5 w-5 mr-2 text-blue-600\" />
                   Notifications
                   {notifications.filter((n) => !n.isRead).length > 0 && (
-                    <Badge className=\"ml-auto\" variant=\"destructive\">
+                    <Badge  className="ml-auto\" variant=\"destructive>
                       {notifications.filter((n) => !n.isRead).length}
                     </Badge>
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className=\"space-y-3 max-h-96 overflow-y-auto\">
+              <CardContent  className="space-y-3 max-h-96 overflow-y-auto>
                 {notifications.length === 0 ? (
-                  <p className=\"text-sm text-gray-500\">No notifications</p>
+                  <p  className="text-sm text-gray-500>No notifications</p>
                 ) : (
                   notifications.slice(0, 10).map((notif) => (
-                    <div key={notif.id} className=\"p-3 bg-blue-50 rounded-lg\">
-                      <p className=\"text-sm\">{notif.message}</p>
+                    <div key={notif.id}  className="p-3 bg-blue-50 rounded-lg>
+                      <p  className="text-sm>{notif.message}</p>
                       {!notif.isRead && (
-                        <Badge className=\"mt-2\" variant=\"secondary\">
+                        <Badge  className="mt-2\" variant=\"secondary>
                           New
                         </Badge>
                       )}
@@ -255,37 +255,37 @@ const InvigilatorDashboard = ({ user, setUser }) => {
       </div>
 
       <Dialog open={!!selectedDuty && !showDeclineModal} onOpenChange={() => setSelectedDuty(null)}>
-        <DialogContent className=\"max-w-3xl\">
+        <DialogContent  className="max-w-3xl>
           <DialogHeader>
             <DialogTitle>Duty Details - Room {selectedDuty?.room?.roomNumber}</DialogTitle>
           </DialogHeader>
-          <div className=\"space-y-4\">
-            <div className=\"flex justify-between items-center\">
-              <h3 className=\"text-lg font-semibold\">{selectedDuty?.exam?.title}</h3>
+          <div  className="space-y-4>
+            <div  className="flex justify-between items-center>
+              <h3  className="text-lg font-semibold>{selectedDuty?.exam?.title}</h3>
               <Button
                 data-testid=\"report-incident-btn\"
                 onClick={() => setShowIncidentModal(true)}
                 size=\"sm\"
                 variant=\"outline\"
-                className=\"text-orange-600 border-orange-600 hover:bg-orange-50\"
+                 className="text-orange-600 border-orange-600 hover:bg-orange-50\"
               >
-                <AlertTriangle className=\"h-4 w-4 mr-1\" /> Report Incident
+                <AlertTriangle  className="h-4 w-4 mr-1\" /> Report Incident
               </Button>
             </div>
-            <div className=\"space-y-2\">
+            <div  className="space-y-2>
               {students.map((student) => (
                 <div
                   key={student.id}
                   data-testid={`student-attendance-${student.id}`}
-                  className=\"flex items-center justify-between p-3 border rounded-lg\"
+                   className="flex items-center justify-between p-3 border rounded-lg\"
                 >
                   <div>
-                    <p className=\"font-semibold\">{student.student?.profile?.name}</p>
-                    <p className=\"text-sm text-gray-600\">
+                    <p  className="font-semibold>{student.student?.profile?.name}</p>
+                    <p  className="text-sm text-gray-600>
                       Roll: {student.student?.rollNumber} | Bench: {student.benchNumber}
                     </p>
                   </div>
-                  <div className=\"flex space-x-2\">
+                  <div  className="flex space-x-2>
                     <Button
                       data-testid={`mark-present-${student.id}`}
                       onClick={() => handleMarkAttendance(student.id, 'present')}
@@ -317,7 +317,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
           <DialogHeader>
             <DialogTitle>Decline Duty</DialogTitle>
           </DialogHeader>
-          <div className=\"space-y-4\">
+          <div  className="space-y-4>
             <div>
               <Label>Reason for declining</Label>
               <Textarea
@@ -328,15 +328,15 @@ const InvigilatorDashboard = ({ user, setUser }) => {
                 rows={4}
               />
             </div>
-            <div className=\"flex space-x-2\">
-              <Button onClick={() => setShowDeclineModal(false)} variant=\"outline\" className=\"flex-1\">
+            <div  className="flex space-x-2>
+              <Button onClick={() => setShowDeclineModal(false)} variant=\"outline\"  className="flex-1>
                 Cancel
               </Button>
               <Button
                 data-testid=\"submit-decline-btn\"
                 onClick={() => handleDeclineDuty(selectedDuty?.id)}
                 variant=\"destructive\"
-                className=\"flex-1\"
+                 className="flex-1\"
               >
                 Submit
               </Button>
@@ -350,7 +350,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
           <DialogHeader>
             <DialogTitle>Report Incident</DialogTitle>
           </DialogHeader>
-          <div className=\"space-y-4\">
+          <div  className="space-y-4>
             <div>
               <Label>Description</Label>
               <Textarea
@@ -361,14 +361,14 @@ const InvigilatorDashboard = ({ user, setUser }) => {
                 rows={4}
               />
             </div>
-            <div className=\"flex space-x-2\">
-              <Button onClick={() => setShowIncidentModal(false)} variant=\"outline\" className=\"flex-1\">
+            <div  className="flex space-x-2>
+              <Button onClick={() => setShowIncidentModal(false)} variant=\"outline\"  className="flex-1>
                 Cancel
               </Button>
               <Button
                 data-testid=\"submit-incident-btn\"
                 onClick={handleSubmitIncident}
-                className=\"flex-1 bg-orange-600 hover:bg-orange-700\"
+                 className="flex-1 bg-orange-600 hover:bg-orange-700\"
               >
                 Submit Report
               </Button>
