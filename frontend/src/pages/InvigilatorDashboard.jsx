@@ -131,7 +131,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
 
         <div  className="grid lg:grid-cols-3 gap-6 mb-8>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}  className="lg:col-span-2>
-            <Card data-testid=\"duties-card\"  className="backdrop-blur-sm bg-white/70>
+            <Card  data-testid="duties-card\"  className="backdrop-blur-sm bg-white/70>
               <CardHeader>
                 <CardTitle  className="flex items-center>
                   <ClipboardCheck  className="h-5 w-5 mr-2 text-green-600\" />
@@ -221,7 +221,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-            <Card data-testid=\"invigilator-notifications-card\"  className="backdrop-blur-sm bg-white/70>
+            <Card  data-testid="invigilator-notifications-card\"  className="backdrop-blur-sm bg-white/70>
               <CardHeader>
                 <CardTitle  className="flex items-center>
                   <Bell  className="h-5 w-5 mr-2 text-blue-600\" />
@@ -263,7 +263,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
             <div  className="flex justify-between items-center>
               <h3  className="text-lg font-semibold>{selectedDuty?.exam?.title}</h3>
               <Button
-                data-testid=\"report-incident-btn\"
+                 data-testid="report-incident-btn\"
                 onClick={() => setShowIncidentModal(true)}
                 size=\"sm\"
                 variant=\"outline\"
@@ -321,7 +321,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
             <div>
               <Label>Reason for declining</Label>
               <Textarea
-                data-testid=\"decline-reason-input\"
+                 data-testid="decline-reason-input\"
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
                 placeholder=\"Please provide a reason...\"
@@ -333,7 +333,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
                 Cancel
               </Button>
               <Button
-                data-testid=\"submit-decline-btn\"
+                 data-testid="submit-decline-btn\"
                 onClick={() => handleDeclineDuty(selectedDuty?.id)}
                 variant=\"destructive\"
                  className="flex-1\"
@@ -354,7 +354,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
             <div>
               <Label>Description</Label>
               <Textarea
-                data-testid=\"incident-description-input\"
+                 data-testid="incident-description-input\"
                 value={incidentData.description}
                 onChange={(e) => setIncidentData({ ...incidentData, description: e.target.value })}
                 placeholder=\"Describe the incident...\"
@@ -366,7 +366,7 @@ const InvigilatorDashboard = ({ user, setUser }) => {
                 Cancel
               </Button>
               <Button
-                data-testid=\"submit-incident-btn\"
+                 data-testid="submit-incident-btn\"
                 onClick={handleSubmitIncident}
                  className="flex-1 bg-orange-600 hover:bg-orange-700\"
               >
