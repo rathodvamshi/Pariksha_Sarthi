@@ -111,15 +111,15 @@ const InvigilatorDashboard = ({ user, setUser }) => {
   };
 
   return (
-    <div className=\"min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-100\">
-      <nav className=\"bg-white/80 backdrop-blur-md border-b border-blue-100 sticky top-0 z-50\">
-        <div className=\"container mx-auto px-4 py-4 flex justify-between items-center\">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-100">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-blue-100 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className=\"text-2xl font-bold text-gray-900\">Invigilator Portal</h1>
-            <p className=\"text-sm text-gray-600\">{user?.profile?.name}</p>
+            <h1 className="text-2xl font-bold text-gray-900">Invigilator Portal</h1>
+            <p className="text-sm text-gray-600">{user?.profile?.name}</p>
           </div>
-          <Button data-testid=\"invigilator-logout-btn\" onClick={handleLogout} variant=\"outline\" className=\"rounded-full\">
-            <LogOut className=\"h-4 w-4 mr-2\" /> Logout
+          <Button data-testid="invigilator-logout-btn" onClick={handleLogout} variant="outline" className="rounded-full">
+            <LogOut className="h-4 w-4 mr-2" /> Logout
           </Button>
         </div>
       </nav>
