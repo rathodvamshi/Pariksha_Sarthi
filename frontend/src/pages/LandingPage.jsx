@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 const LandingPage = ({ setUser }) => {
   const [showAuth, setShowAuth] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [colleges, setColleges] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,6 +21,13 @@ const LandingPage = ({ setUser }) => {
     email: '',
     rollNumber: '',
     password: '',
+  });
+  const [signupData, setSignupData] = useState({
+    collegeName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    name: '',
   });
   const navigate = useNavigate();
 
