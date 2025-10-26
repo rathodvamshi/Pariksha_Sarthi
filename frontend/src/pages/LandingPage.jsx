@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GraduationCap, Users, Building2, FileText, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, Users, Building2, FileText, ArrowRight, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ const LandingPage = ({ setUser }) => {
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [colleges, setColleges] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [collegesLoading, setCollegesLoading] = useState(true);
   const [formData, setFormData] = useState({
     collegeId: '',
     email: '',
@@ -35,12 +36,39 @@ const LandingPage = ({ setUser }) => {
     fetchColleges();
   }, []);
 
-  const fetchColleges = async () => {
+  const fetchColleges = async (retryCount = 0) => {
     try {
+      setCollegesLoading(true);
+      console.log('Fetching colleges from:', `${axiosInstance.defaults.baseURL}/colleges`);
       const response = await axiosInstance.get('/colleges');
+      console.log('Colleges response:', response.data);
       setColleges(response.data);
     } catch (error) {
       console.error('Error fetching colleges:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
+      // Retry logic for network errors
+      if (retryCount < 2 && (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error'))) {
+        console.log(`Retrying fetch colleges... (attempt ${retryCount + 1})`);
+        setTimeout(() => fetchColleges(retryCount + 1), 2000);
+        return;
+      }
+      
+      // Show user-friendly error message
+      if (error.response?.status === 404) {
+        toast.error('Colleges endpoint not found. Please check backend configuration.');
+      } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+        toast.error('Cannot connect to server. Please ensure backend is running on http://localhost:8000');
+      } else {
+        toast.error('Failed to load colleges. Please check if the server is running.');
+      }
+    } finally {
+      setCollegesLoading(false);
     }
   };
 
@@ -264,20 +292,39 @@ const LandingPage = ({ setUser }) => {
               {authMode === 'login' ? (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <Label htmlFor="college">Select College</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="college">Select College</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => fetchColleges()}
+                        disabled={collegesLoading}
+                        className="h-6 w-6 p-0"
+                      >
+                        <RefreshCw className={`h-3 w-3 ${collegesLoading ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
                     <Select
                       value={formData.collegeId}
                       onValueChange={(value) => setFormData({ ...formData, collegeId: value })}
+                      disabled={collegesLoading}
                     >
                       <SelectTrigger data-testid="college-select">
-                        <SelectValue placeholder="Choose college" />
+                        <SelectValue placeholder={collegesLoading ? "Loading colleges..." : "Choose college"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {colleges.map((college) => (
-                          <SelectItem key={college.id} value={college.id}>
-                            {college.name}
+                        {colleges.length === 0 && !collegesLoading ? (
+                          <SelectItem value="no-colleges" disabled>
+                            No colleges available
                           </SelectItem>
-                        ))}
+                        ) : (
+                          colleges.map((college) => (
+                            <SelectItem key={college.id} value={college.id}>
+                              {college.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -419,20 +466,39 @@ const LandingPage = ({ setUser }) => {
           ) : (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <Label htmlFor="college">Select College</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="college">Select College</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fetchColleges()}
+                    disabled={collegesLoading}
+                    className="h-6 w-6 p-0"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${collegesLoading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
                 <Select
                   value={formData.collegeId}
                   onValueChange={(value) => setFormData({ ...formData, collegeId: value })}
+                  disabled={collegesLoading}
                 >
                   <SelectTrigger data-testid="college-select">
-                    <SelectValue placeholder="Choose college" />
+                    <SelectValue placeholder={collegesLoading ? "Loading colleges..." : "Choose college"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {colleges.map((college) => (
-                      <SelectItem key={college.id} value={college.id}>
-                        {college.name}
+                    {colleges.length === 0 && !collegesLoading ? (
+                      <SelectItem value="no-colleges" disabled>
+                        No colleges available
                       </SelectItem>
-                    ))}
+                    ) : (
+                      colleges.map((college) => (
+                        <SelectItem key={college.id} value={college.id}>
+                          {college.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

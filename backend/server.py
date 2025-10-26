@@ -344,6 +344,38 @@ async def login(request: LoginRequest):
 async def verify_token(current_user: dict = Depends(get_current_user)):
     return {k: v for k, v in current_user.items() if k != "password"}
 
+class ChangePasswordRequest(BaseModel):
+    currentPassword: str
+    newPassword: str
+
+@api_router.post("/user/change-password")
+async def change_password(request: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
+    # Verify current password
+    if not verify_password(request.currentPassword, current_user["password"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    # Validate new password
+    if len(request.newPassword) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters long")
+    
+    if request.currentPassword == request.newPassword:
+        raise HTTPException(status_code=400, detail="New password must be different from current password")
+    
+    # Hash new password
+    new_hashed_password = hash_password(request.newPassword)
+    
+    # Update password in database
+    await db.users.update_one(
+        {"id": current_user["id"]}, 
+        {"$set": {"password": new_hashed_password}}
+    )
+    
+    return {"message": "Password changed successfully"}
+
+@api_router.get("/user/test")
+async def test_endpoint():
+    return {"message": "Test endpoint working"}
+
 # ============ COLLEGE ROUTES ============
 
 @api_router.get("/colleges", response_model=List[College])
