@@ -412,53 +412,219 @@ async def delete_room(room_id: str, current_user: dict = Depends(get_current_use
 
 # ============ STUDENT ROUTES ============
 
-@api_router.get("/students/{college_id}", response_model=List[User])
+# Student model for the dedicated students collection
+class Student(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    collegeId: str
+    rollNumber: str
+    name: str
+    email: Optional[EmailStr] = None
+    year: int
+    branch: str
+    section: Optional[str] = "A"
+    attendancePercent: Optional[float] = 85.0
+    dob: Optional[str] = None
+    password: Optional[str] = None  # Only used for creation, never returned
+
+@api_router.get("/students/{college_id}")
 async def get_students(college_id: str, year: Optional[int] = None, branch: Optional[str] = None, current_user: dict = Depends(get_current_user)):
-    query = {"collegeId": college_id, "role": "student"}
+    query = {"collegeId": college_id}
     if year:
-        query["profile.year"] = year
+        query["year"] = year
     if branch:
-        query["profile.branch"] = branch
-    students = await db.users.find(query, {"_id": 0, "password": 0}).to_list(1000)
+        query["branch"] = branch
+    
+    # First try the dedicated students collection
+    students = await db.students.find(query, {"_id": 0, "password": 0}).to_list(1000)
+    
+    # If no students found and the collection might be empty, fall back to users collection
+    if not students:
+        legacy_query = {"collegeId": college_id, "role": "student"}
+        if year:
+            legacy_query["profile.year"] = year
+        if branch:
+            legacy_query["profile.branch"] = branch
+        
+        legacy_students = await db.users.find(legacy_query, {"_id": 0, "password": 0}).to_list(1000)
+        
+        # Transform legacy format to new format
+        for student in legacy_students:
+            profile = student.get("profile", {})
+            students.append({
+                "id": student.get("id"),
+                "collegeId": student.get("collegeId"),
+                "rollNumber": student.get("rollNumber"),
+                "name": profile.get("name", ""),
+                "email": student.get("email"),
+                "year": profile.get("year", 1),
+                "branch": profile.get("branch", "CSE"),
+                "section": profile.get("section", "A"),
+                "attendancePercent": profile.get("attendancePercent", 85.0),
+                "dob": profile.get("dob", "")
+            })
+    
     return students
 
-@api_router.post("/students", response_model=User)
-async def create_student(user: User, current_user: dict = Depends(get_current_user)):
+@api_router.post("/students")
+async def create_student(student: Student, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create students")
     
-    # Check if student already exists
-    existing = await db.users.find_one({"collegeId": user.collegeId, "rollNumber": user.rollNumber})
+    # Check if student already exists in students collection
+    existing = await db.students.find_one({"collegeId": student.collegeId, "rollNumber": student.rollNumber})
     if existing:
-        raise HTTPException(status_code=400, detail="Student with this roll number already exists")
+        raise HTTPException(status_code=409, detail="Student with this roll number already exists")
     
-    user.role = "student"
-    user.password = hash_password(user.password)
-    doc = user.model_dump()
-    await db.users.insert_one(doc)
-    return user
+    # Check if student exists in legacy users collection
+    legacy_existing = await db.users.find_one({"collegeId": student.collegeId, "rollNumber": student.rollNumber, "role": "student"})
+    if legacy_existing:
+        raise HTTPException(status_code=409, detail="Student with this roll number already exists in legacy system")
+    
+    # Set password to roll number if not provided
+    if not student.password:
+        student.password = student.rollNumber
+    
+    # Hash the password
+    hashed_password = hash_password(student.password)
+    
+    # Create student document
+    student_doc = student.model_dump()
+    student_doc["password"] = hashed_password
+    
+    # Insert into students collection
+    await db.students.insert_one(student_doc)
+    
+    # Also create in users collection for authentication compatibility
+    user_doc = {
+        "id": student.id,
+        "collegeId": student.collegeId,
+        "email": student.email,
+        "rollNumber": student.rollNumber,
+        "password": hashed_password,
+        "role": "student",
+        "profile": {
+            "name": student.name,
+            "dob": student.dob,
+            "branch": student.branch,
+            "year": student.year,
+            "section": student.section,
+            "attendancePercent": student.attendancePercent
+        }
+    }
+    await db.users.insert_one(user_doc)
+    
+    # Return student without password
+    result = student_doc.copy()
+    result.pop("password", None)
+    return result
 
 @api_router.post("/students/bulk")
-async def create_students_bulk(students: List[User], current_user: dict = Depends(get_current_user)):
+async def create_students_bulk(students: List[Student], current_user: dict = Depends(get_current_user)):
+    print(f"=== BULK IMPORT DEBUG ===")
+    print(f"Number of students received: {len(students)}")
+    print(f"Current user: {current_user}")
+    print(f"User role: {current_user.get('role')}")
+    print(f"User collegeId: {current_user.get('collegeId')}")
+    
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create students")
     
-    docs = []
+    student_docs = []
+    user_docs = []
+    duplicates = []
+    
     for student in students:
-        student.role = "student"
-        student.password = hash_password(student.password)
-        docs.append(student.model_dump())
+        # Check if student already exists in students collection
+        existing = await db.students.find_one({"collegeId": student.collegeId, "rollNumber": student.rollNumber})
+        if existing:
+            duplicates.append(student.rollNumber)
+            continue
+        
+        # Check if student exists in legacy users collection
+        legacy_existing = await db.users.find_one({"collegeId": student.collegeId, "rollNumber": student.rollNumber, "role": "student"})
+        if legacy_existing:
+            duplicates.append(student.rollNumber)
+            continue
+        
+        # Set password to roll number if not provided
+        if not student.password:
+            student.password = student.rollNumber
+        
+        # Hash the password
+        hashed_password = hash_password(student.password)
+        
+        # Create student document
+        student_doc = student.model_dump()
+        student_doc["password"] = hashed_password
+        student_docs.append(student_doc)
+        
+        # Also create user document for authentication compatibility
+        user_doc = {
+            "id": student.id,
+            "collegeId": student.collegeId,
+            "email": student.email,
+            "rollNumber": student.rollNumber,
+            "password": hashed_password,
+            "role": "student",
+            "profile": {
+                "name": student.name,
+                "dob": student.dob,
+                "branch": student.branch,
+                "year": student.year,
+                "section": student.section,
+                "attendancePercent": student.attendancePercent
+            }
+        }
+        user_docs.append(user_doc)
     
-    if docs:
-        await db.users.insert_many(docs)
+    # Insert documents
+    print(f"About to insert {len(student_docs)} students and {len(user_docs)} users")
     
-    return {"message": f"{len(docs)} students created successfully"}
+    if student_docs:
+        try:
+            print("Inserting into students collection...")
+            result_students = await db.students.insert_many(student_docs)
+            print(f"✅ Inserted {len(result_students.inserted_ids)} students into students collection")
+            
+            print("Inserting into users collection...")
+            result_users = await db.users.insert_many(user_docs)
+            print(f"✅ Inserted {len(result_users.inserted_ids)} users into users collection")
+            
+            # Verify insertion
+            for student_doc in student_docs:
+                inserted_student = await db.students.find_one({"id": student_doc["id"]})
+                if inserted_student:
+                    print(f"✅ Verified student {student_doc['rollNumber']} in students collection")
+                else:
+                    print(f"❌ Student {student_doc['rollNumber']} NOT found in students collection")
+                
+                inserted_user = await db.users.find_one({"id": student_doc["id"]})
+                if inserted_user:
+                    print(f"✅ Verified user {student_doc['rollNumber']} in users collection")
+                else:
+                    print(f"❌ User {student_doc['rollNumber']} NOT found in users collection")
+                    
+        except Exception as e:
+            print(f"❌ Error during insertion: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Database insertion failed: {str(e)}")
+    
+    result_message = f"{len(student_docs)} students created successfully"
+    if duplicates:
+        result_message += f", {len(duplicates)} duplicates skipped"
+    
+    print(f"=== BULK IMPORT COMPLETE: {result_message} ===")
+    return {"message": result_message, "created": len(student_docs), "duplicates": duplicates}
 
 @api_router.delete("/students/{student_id}")
 async def delete_student(student_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can delete students")
+    
+    # Delete from both collections
+    await db.students.delete_one({"id": student_id})
     await db.users.delete_one({"id": student_id, "role": "student"})
+    
     return {"message": "Student deleted successfully"}
 
 # ============ STAFF ROUTES ============
