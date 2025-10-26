@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Building2, Users, FileText, CalendarDays, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileText, CalendarDays, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import AdminOverview from '@/components/admin/AdminOverview';
@@ -9,6 +9,7 @@ import ManageInfrastructure from '@/components/admin/ManageInfrastructure';
 import ManageStudents from '@/components/admin/ManageStudents';
 import ManageStaff from '@/components/admin/ManageStaff';
 import CreateExam from '@/components/admin/CreateExam';
+import AdminProfile from './AdminProfile';
 
 const AdminDashboard = ({ user, setUser }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -28,6 +29,7 @@ const AdminDashboard = ({ user, setUser }) => {
     { id: 'students', label: 'Students', icon: Users, path: '/admin/students' },
     { id: 'staff', label: 'Staff', icon: FileText, path: '/admin/staff' },
     { id: 'exams', label: 'Exams', icon: CalendarDays, path: '/admin/exams' },
+    { id: 'profile', label: 'Profile', icon: User, path: '/admin/profile' },
   ];
 
   return (
@@ -75,6 +77,7 @@ const AdminDashboard = ({ user, setUser }) => {
             <Route path="/students" element={<ManageStudents user={user} />} />
             <Route path="/staff" element={<ManageStaff user={user} />} />
             <Route path="/exams" element={<CreateExam user={user} />} />
+            <Route path="/profile" element={<AdminProfile user={user} setUser={setUser} />} />
           </Routes>
         </main>
       </div>
