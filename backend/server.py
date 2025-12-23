@@ -1954,6 +1954,8 @@ def _parse_cors_origins() -> list[str]:
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
+        # Production frontend on Vercel
+        "https://parikshasarthi.vercel.app",
     ]
     extra = os.environ.get("CORS_ORIGINS", "").strip()
     if not extra:
@@ -1965,6 +1967,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=_parse_cors_origins(),
+    # Allow all Vercel preview subdomains as well
+    allow_origin_regex=r"^https://.*\.vercel\.app$",
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
