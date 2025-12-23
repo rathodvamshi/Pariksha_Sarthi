@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -64,6 +64,19 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
 # Create the main app without a prefix
 app = FastAPI()
+
+# Attach CORS immediately after app creation
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://parikshasarthi.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount static directory to serve logo or other static assets
 static_dir = ROOT_DIR / "static"
@@ -1948,32 +1961,7 @@ async def get_stats(college_id: str, current_user: dict = Depends(get_current_us
 # Include the router in the main app
 app.include_router(api_router)
 
-# CORS Configuration
-def _parse_cors_origins() -> list[str]:
-    defaults = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        # Production frontend on Vercel
-        "https://parikshasarthi.vercel.app",
-        "https://www.parikshasarthi.vercel.app",
-    ]
-    extra = os.environ.get("CORS_ORIGINS", "").strip()
-    if not extra:
-        return defaults
-    parts = [p.strip() for p in extra.split(",") if p.strip()]
-    return defaults + parts
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=_parse_cors_origins(),
-    # Allow all Vercel preview subdomains as well
-    allow_origin_regex=r"^https://.*\.vercel\.app$",
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+# CORS Configuration handled above immediately after app creation
 
 # Configure logging
 logging.basicConfig(
