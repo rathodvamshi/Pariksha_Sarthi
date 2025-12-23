@@ -9,13 +9,20 @@ load_dotenv(ROOT_DIR / '.env')
 
 async def check_db():
     # MongoDB connection
-    mongo_url = os.environ['MONGO_URL'].strip('"')
-    db_name = os.environ['DB_NAME'].strip('"')
+    mongo_url = os.environ.get('MONGO_URL', '').strip('"').strip()
+    db_name = os.environ.get('DB_NAME', 'pariksha_sarthi').strip('"').strip()
     
-    print(f"Connecting to MongoDB: {mongo_url}")
+    if not mongo_url:
+        print("❌ MONGO_URL is not set. Please set an Atlas SRV URI in backend/.env.")
+        return
+    print(f"Connecting to MongoDB Atlas: {mongo_url}")
     print(f"Database name: {db_name}")
     
-    client = AsyncIOMotorClient(mongo_url)
+    try:
+        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=10000)
+    except Exception as e:
+        print(f"❌ Failed to connect to MongoDB Atlas: {e}")
+        return
     db = client[db_name]
     
     # List collections

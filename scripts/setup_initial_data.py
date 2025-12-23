@@ -1,7 +1,5 @@
 import asyncio
 import sys
-sys.path.insert(0, '/app/backend')
-
 from motor.motor_asyncio import AsyncIOMotorClient
 import bcrypt
 import uuid
@@ -10,14 +8,17 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
-ROOT_DIR = Path('/app/backend')
-load_dotenv(ROOT_DIR / '.env')
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_DIR = PROJECT_ROOT / 'backend'
+load_dotenv(BACKEND_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
-db_name = os.environ['DB_NAME']
+mongo_url = os.environ.get('MONGO_URL', '').strip('"').strip()
+db_name = os.environ.get('DB_NAME', 'pariksha_sarthi').strip('"').strip()
 
 async def setup_initial_data():
-    client = AsyncIOMotorClient(mongo_url)
+    if not mongo_url:
+        raise RuntimeError("MONGO_URL is not set. Please provide a valid MongoDB Atlas SRV connection string in backend/.env.")
+    client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=10000)
     db = client[db_name]
     
     print("🚀 Setting up Pariksha Sarthi initial data...")

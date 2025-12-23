@@ -3,6 +3,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
 import logging
 from pathlib import Path
@@ -11,7 +13,18 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 import bcrypt
-import jwt
+# JWT provider: prefer python-jose; fallback to PyJWT with compatible names
+try:
+    from jose import jwt, JWTError, ExpiredSignatureError  # type: ignore
+except Exception:  # pragma: no cover
+    import jwt  # type: ignore
+    try:
+        from jwt import InvalidTokenError as JWTError, ExpiredSignatureError  # type: ignore
+    except Exception:  # last-resort generic aliases
+        class JWTError(Exception):
+            pass
+        class ExpiredSignatureError(Exception):
+            pass
 import random
 import csv
 import io
@@ -19,10 +32,29 @@ import io
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL'].strip('"')
-db_name = os.environ['DB_NAME'].strip('"')
-client = AsyncIOMotorClient(mongo_url)
+# MongoDB connection (Atlas only; no local fallback)
+raw_mongo_url = os.environ.get('MONGO_URL', '').strip('"').strip()
+db_name = os.environ.get('DB_NAME', 'pariksha_sarthi').strip('"').strip()
+
+def _build_client(uri: str) -> AsyncIOMotorClient:
+    return AsyncIOMotorClient(uri, serverSelectionTimeoutMS=10000)
+
+def _sanitize_uri_for_log(uri: str) -> str:
+    try:
+        if '://' in uri and '@' in uri:
+            scheme, rest = uri.split('://', 1)
+            parts = rest.split('@', 1)
+            if len(parts) == 2:
+                host_and_opts = parts[1]
+                return f"{scheme}://***:***@{host_and_opts}"
+        return uri
+    except Exception:
+        return "<redacted>"
+
+if not raw_mongo_url:
+    raise RuntimeError("MONGO_URL is not set. Please provide a valid MongoDB Atlas SRV connection string in backend/.env.")
+
+client = _build_client(raw_mongo_url)
 db = client[db_name]
 
 # JWT Configuration
@@ -32,6 +64,19 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
 # Create the main app without a prefix
 app = FastAPI()
+
+# Mount static directory to serve logo or other static assets
+static_dir = ROOT_DIR / "static"
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+@app.get("/logo")
+async def get_logo():
+    """Return the site logo placed in the backend static directory as an SVG file."""
+    logo_path = static_dir / "logo.svg"
+    if not logo_path.exists():
+        raise HTTPException(status_code=404, detail="Logo not found")
+    return FileResponse(str(logo_path), media_type="image/svg+xml")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -45,6 +90,7 @@ class College(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     address: str
+    logoUrl: Optional[str] = None
 
 class UserProfile(BaseModel):
     name: str
@@ -240,6 +286,55 @@ def create_access_token(data: dict) -> str:
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+# Date/Time utilities
+def _normalize_date_str(date_str: str) -> str:
+    """Normalize date string to YYYY-MM-DD. Accepts common formats; raises ValueError if invalid."""
+    if not isinstance(date_str, str) or not date_str.strip():
+        raise ValueError("Date is required")
+    date_str = date_str.strip()
+    fmts = ["%Y-%m-%d", "%d-%m-%Y", "%Y/%m/%d", "%d/%m/%Y", "%Y.%m.%d", "%d.%m.%Y"]
+    from datetime import datetime as _dt
+    last_err = None
+    for f in fmts:
+        try:
+            d = _dt.strptime(date_str, f).date()
+            return d.isoformat()
+        except Exception as e:
+            last_err = e
+            continue
+    # Try ISO-like strings
+    try:
+        d = _dt.fromisoformat(date_str.replace("/", "-").split("T")[0]).date()
+        return d.isoformat()
+    except Exception:
+        pass
+    raise ValueError(f"Invalid date format: {date_str}")
+
+def _normalize_time_str(time_str: str) -> str:
+    """Normalize time string to HH:MM (24h). Accepts HH:MM[:SS]."""
+    if not isinstance(time_str, str) or not time_str.strip():
+        raise ValueError("Time is required")
+    time_str = time_str.strip()
+    parts = time_str.split(":")
+    if len(parts) < 2:
+        raise ValueError("Invalid time format; expected HH:MM")
+    hh, mm = parts[0], parts[1]
+    try:
+        h = int(hh)
+        m = int(mm)
+    except Exception:
+        raise ValueError("Invalid time digits")
+    if not (0 <= h <= 23 and 0 <= m <= 59):
+        raise ValueError("Time out of range")
+    return f"{h:02d}:{m:02d}"
+
+def _ensure_future_or_today(date_str: str) -> None:
+    """Raise HTTPException if date is in the past."""
+    from datetime import date as _date
+    d = datetime.fromisoformat(date_str + "T00:00:00").date()
+    if d < _date.today():
+        raise HTTPException(status_code=400, detail="Exam date cannot be in the past")
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         token = credentials.credentials
@@ -251,9 +346,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
         return user
-    except jwt.ExpiredSignatureError:
+    except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.JWTError:
+    except JWTError:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
 
 # ============ AUTH ROUTES ============
@@ -388,6 +483,53 @@ async def create_college(college: College):
     doc = college.model_dump()
     await db.colleges.insert_one(doc)
     return college
+
+@api_router.post("/colleges/{college_id}/logo")
+async def upload_college_logo(
+    college_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can update college logo")
+    if current_user.get("collegeId") != college_id:
+        raise HTTPException(status_code=403, detail="You can only update your own college logo")
+
+    content_type = file.content_type or ""
+    allowed = {
+        "image/png": ".png",
+        "image/jpeg": ".jpg",
+        "image/jpg": ".jpg",
+        "image/webp": ".webp",
+        "image/svg+xml": ".svg",
+    }
+    if content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Unsupported image type. Use PNG, JPG, WEBP or SVG.")
+
+    # Ensure static/colleges directory exists
+    colleges_dir = static_dir / "colleges"
+    colleges_dir.mkdir(parents=True, exist_ok=True)
+
+    ext = allowed[content_type]
+    filename = f"{college_id}{ext}"
+    file_path = colleges_dir / filename
+
+    try:
+        content = await file.read()
+        # Basic size guard (~5MB)
+        if len(content) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Image too large. Max 5MB.")
+        with open(file_path, "wb") as f:
+            f.write(content)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to save college logo: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save image")
+
+    public_url = f"/static/colleges/{filename}"
+    await db.colleges.update_one({"id": college_id}, {"$set": {"logoUrl": public_url}})
+    return {"logoUrl": public_url}
 
 # ============ BLOCK ROUTES ============
 
@@ -546,9 +688,11 @@ async def create_student(student: Student, current_user: dict = Depends(get_curr
     }
     await db.users.insert_one(user_doc)
     
-    # Return student without password
-    result = student_doc.copy()
-    result.pop("password", None)
+    # Return student without password and without Mongo's internal _id
+    result = {k: v for k, v in student_doc.items() if k not in {"password", "_id"}}
+    # Ensure optional EmailStr is plain string
+    if result.get("email") is not None:
+        result["email"] = str(result["email"])
     return result
 
 @api_router.post("/students/bulk")
@@ -709,6 +853,27 @@ async def get_exam(exam_id: str, current_user: dict = Depends(get_current_user))
 async def create_exam(exam: ExamSession, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create exams")
+    # Normalize and validate date/time
+    try:
+        normalized_date = _normalize_date_str(exam.date)
+        _ensure_future_or_today(normalized_date)
+        start_time = _normalize_time_str(exam.startTime)
+        end_time = _normalize_time_str(exam.endTime)
+        # Validate time order
+        st_h, st_m = map(int, start_time.split(":"))
+        en_h, en_m = map(int, end_time.split(":"))
+        if (en_h, en_m) <= (st_h, st_m):
+            raise HTTPException(status_code=400, detail="End time must be after start time")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Persist normalized values
+    exam.date = normalized_date
+    exam.startTime = start_time
+    exam.endTime = end_time
+
     doc = exam.model_dump()
     await db.examSessions.insert_one(doc)
     
@@ -716,8 +881,8 @@ async def create_exam(exam: ExamSession, current_user: dict = Depends(get_curren
     calendar_event = CalendarEvent(
         collegeId=exam.collegeId,
         title=exam.title,
-        date=exam.date,
-        time=exam.startTime,
+        date=normalized_date,
+        time=start_time,
         type="exam",
         status=exam.status,
         examId=exam.id
@@ -731,6 +896,25 @@ async def update_exam(exam_id: str, exam: ExamSession, current_user: dict = Depe
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can update exams")
     
+    # Normalize and validate date/time
+    try:
+        normalized_date = _normalize_date_str(exam.date)
+        _ensure_future_or_today(normalized_date)
+        start_time = _normalize_time_str(exam.startTime)
+        end_time = _normalize_time_str(exam.endTime)
+        st_h, st_m = map(int, start_time.split(":"))
+        en_h, en_m = map(int, end_time.split(":"))
+        if (en_h, en_m) <= (st_h, st_m):
+            raise HTTPException(status_code=400, detail="End time must be after start time")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    exam.date = normalized_date
+    exam.startTime = start_time
+    exam.endTime = end_time
+
     # Use atomic transaction for exam updates
     async with db.client.start_session() as session:
         async with session.start_transaction():
@@ -743,8 +927,8 @@ async def update_exam(exam_id: str, exam: ExamSession, current_user: dict = Depe
                 {"examId": exam_id},
                 {"$set": {
                     "title": exam.title,
-                    "date": exam.date,
-                    "time": exam.startTime,
+                    "date": normalized_date,
+                    "time": start_time,
                     "updatedAt": datetime.now(timezone.utc).isoformat()
                 }},
                 session=session
@@ -810,6 +994,24 @@ async def save_draft_exam(draft: DraftExam, current_user: dict = Depends(get_cur
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can save draft exams")
     
+    # Normalize date/time (allow drafts for future or today only to keep data clean)
+    try:
+        normalized_date = _normalize_date_str(draft.date)
+        _ensure_future_or_today(normalized_date)
+        start_time = _normalize_time_str(draft.startTime)
+        end_time = _normalize_time_str(draft.endTime)
+        st_h, st_m = map(int, start_time.split(":"))
+        en_h, en_m = map(int, end_time.split(":"))
+        if (en_h, en_m) <= (st_h, st_m):
+            raise HTTPException(status_code=400, detail="End time must be after start time")
+        draft.date = normalized_date
+        draft.startTime = start_time
+        draft.endTime = end_time
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     draft.updatedAt = datetime.now(timezone.utc).isoformat()
     doc = draft.model_dump()
     await db.draftExams.insert_one(doc)
@@ -818,8 +1020,8 @@ async def save_draft_exam(draft: DraftExam, current_user: dict = Depends(get_cur
     calendar_event = CalendarEvent(
         collegeId=draft.collegeId,
         title=f"[DRAFT] {draft.title}",
-        date=draft.date,
-        time=draft.startTime,
+        date=normalized_date,
+        time=start_time,
         type="exam",
         status="draft",
         examId=draft.id
@@ -887,13 +1089,28 @@ async def finalize_draft_exam(draft_id: str, current_user: dict = Depends(get_cu
     if not draft:
         raise HTTPException(status_code=404, detail="Draft exam not found")
     
+    # Normalize and validate date/time from draft (prevent scheduling past exams)
+    try:
+        normalized_date = _normalize_date_str(draft["date"])
+        _ensure_future_or_today(normalized_date)
+        start_time = _normalize_time_str(draft["startTime"])
+        end_time = _normalize_time_str(draft["endTime"])
+        st_h, st_m = map(int, start_time.split(":"))
+        en_h, en_m = map(int, end_time.split(":"))
+        if (en_h, en_m) <= (st_h, st_m):
+            raise HTTPException(status_code=400, detail="End time must be after start time")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     # Create finalized exam
     exam = ExamSession(
         collegeId=draft["collegeId"],
         title=draft["title"],
-        date=draft["date"],
-        startTime=draft["startTime"],
-        endTime=draft["endTime"],
+        date=normalized_date,
+        startTime=start_time,
+        endTime=end_time,
         subjects=draft["subjects"],
         years=draft["years"],
         branches=draft["branches"],
@@ -933,8 +1150,8 @@ async def finalize_draft_exam(draft_id: str, current_user: dict = Depends(get_cu
     calendar_event = CalendarEvent(
         collegeId=exam.collegeId,
         title=exam.title,
-        date=exam.date,
-        time=exam.startTime,
+        date=normalized_date,
+        time=start_time,
         type="exam",
         status="scheduled",
         examId=exam.id
@@ -1732,10 +1949,22 @@ async def get_stats(college_id: str, current_user: dict = Depends(get_current_us
 app.include_router(api_router)
 
 # CORS Configuration
+def _parse_cors_origins() -> list[str]:
+    defaults = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+    ]
+    extra = os.environ.get("CORS_ORIGINS", "").strip()
+    if not extra:
+        return defaults
+    parts = [p.strip() for p in extra.split(",") if p.strip()]
+    return defaults + parts
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"] + os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(',') if os.environ.get('CORS_ORIGINS') else ["http://localhost:3000"],
+    allow_origins=_parse_cors_origins(),
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -1747,6 +1976,26 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+@app.options("/health")
+async def health_options():
+    # Explicit OPTIONS handler for environments that send bare preflights
+    return {"status": "ok"}
+
+@app.on_event("startup")
+async def _log_db_connection():
+    try:
+        # Force a quick ping to verify connectivity
+        await client.admin.command("ping")
+        logger.info(
+            f"✅ Connected to MongoDB Atlas (db='{db_name}', uri='{_sanitize_uri_for_log(raw_mongo_url)}')"
+        )
+    except Exception as e:
+        logger.error(f"❌ MongoDB connection failed: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

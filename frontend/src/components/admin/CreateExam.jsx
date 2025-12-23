@@ -125,8 +125,68 @@ const CreateExam = ({ user }) => {
     }
   };
 
+  const isValidDateStr = (str) => {
+    if (!str || typeof str !== 'string') return false;
+    const parts = str.split('-');
+    if (parts.length !== 3) return false;
+    const [y, m, d] = parts.map(p => parseInt(p, 10));
+    if (!y || !m || !d) return false;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return false;
+    const dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+  };
+
+  const isFutureOrToday = (str) => {
+    if (!isValidDateStr(str)) return false;
+    const [y, m, d] = str.split('-').map(p => parseInt(p, 10));
+    const today = new Date();
+    const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dt = new Date(y, m - 1, d);
+    return dt >= t;
+  };
+
+  const isValidTime = (str) => {
+    if (!str || typeof str !== 'string') return false;
+    const parts = str.split(':');
+    if (parts.length < 2) return false;
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    return Number.isInteger(h) && Number.isInteger(m) && h >= 0 && h <= 23 && m >= 0 && m <= 59;
+  };
+
+  const validateExamData = () => {
+    if (!examData.title?.trim()) {
+      toast.error('Please enter an exam title');
+      return false;
+    }
+    if (!isValidDateStr(examData.date)) {
+      toast.error('Please select a valid date (YYYY-MM-DD)');
+      return false;
+    }
+    if (!isFutureOrToday(examData.date)) {
+      toast.error('Exam date cannot be in the past');
+      return false;
+    }
+    if (!isValidTime(examData.startTime) || !isValidTime(examData.endTime)) {
+      toast.error('Please enter valid start and end times (HH:MM)');
+      return false;
+    }
+    const [sh, sm] = examData.startTime.split(':').map(n => parseInt(n, 10));
+    const [eh, em] = examData.endTime.split(':').map(n => parseInt(n, 10));
+    if (eh < sh || (eh === sh && em <= sm)) {
+      toast.error('End time must be after start time');
+      return false;
+    }
+    if (!examData.years?.length || !examData.branches?.length || !examData.subjects?.length) {
+      toast.error('Please select years, branches, and subjects');
+      return false;
+    }
+    return true;
+  };
+
   const handleCreateExam = async () => {
     try {
+      if (!validateExamData()) return;
       const response = await axiosInstance.post('/exams', {
         collegeId: user.collegeId,
         ...examData,
@@ -136,8 +196,11 @@ const CreateExam = ({ user }) => {
       setCreatedExamId(response.data.id);
       setCurrentStep(2);
       await fetchCapacityInfo();
+      // Refresh calendar immediately
+      try { window.dispatchEvent(new Event('calendar:refresh')); } catch (e) { /* no-op */ }
     } catch (error) {
-      toast.error('Failed to create exam');
+      const msg = error.response?.data?.detail || 'Failed to create exam';
+      toast.error(msg);
     }
   };
 
@@ -939,7 +1002,9 @@ const CreateExam = ({ user }) => {
                     <div
                       key={exam.id}
                       data-testid={`exam-${exam.id}`}
-                      className="p-4 border border-blue-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 hover:shadow-md transition-shadow"
+                    min={(function(){ const t=new Date(); const y=t.getFullYear(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0'); return `${y}-${m}-${d}`; })()}
+                    onChange={(e) => setExamData({ ...examData, date: e.target.value })}
+                      className="p-4 rounded-lg border border-black bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
