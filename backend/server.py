@@ -1956,6 +1956,7 @@ def _parse_cors_origins() -> list[str]:
         "http://127.0.0.1:3000",
         # Production frontend on Vercel
         "https://parikshasarthi.vercel.app",
+        "https://www.parikshasarthi.vercel.app",
     ]
     extra = os.environ.get("CORS_ORIGINS", "").strip()
     if not extra:
@@ -1969,7 +1970,7 @@ app.add_middleware(
     allow_origins=_parse_cors_origins(),
     # Allow all Vercel preview subdomains as well
     allow_origin_regex=r"^https://.*\.vercel\.app$",
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
@@ -1989,6 +1990,10 @@ async def health():
 async def health_options():
     # Explicit OPTIONS handler for environments that send bare preflights
     return {"status": "ok"}
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": "Pariksha Sarthi Backend"}
 
 @app.on_event("startup")
 async def _log_db_connection():
